@@ -1,78 +1,92 @@
-const Game = () => {    
-    let cells = "123456789".split('') //creates cells array
-    let round = 1
-    let player_x = null;
-    let player_o = null;
-    const game_setup = () => {
-        player_x = Player("x")
-        player_o = Player("o")
+const Helper = (() => {
+    const onGameOver = (current_player) => {
+    if (Board.game_over()) {
+        console.log(current_player,`wins`)  
     }
-
-    const play = () => {
-        game_setup();
-        document.querySelectorAll(".square").forEach((value)=>{
-            value.addEventListener("click",(e)=> {   
-                if (round%2 != 0) {
-                    e.target.querySelector(".x").style.display = "block"
-                    cells = removeItemOnce(cells, e.target.id, player_x.move)
-                    round += 1
-                    console.log(game_over())
-                }  
-                else {
-                    e.target.querySelector(".o").style.display = "block"
-                    cells = removeItemOnce(cells, e.target.id, player_o.move)
-                    round += 1
-                    console.log(game_over())
-                }
-            },{ once: true })
-        })
-    }
-
-    const removeItemOnce = (arr, value, new_value) => {
-        var index = arr.indexOf(value);
-        if (index > -1) {
-          arr.splice(index, 1, new_value);
-        }
-        return arr;
-      }
-
+    else {
+        console.log("DRAW")
+    }    
+    document.querySelector(".modal").classList.add("show-modal")
+    }  
     
+    return {onGameOver}
+})()
 
+
+const Board = (() => {
     const WINNING_COMBOS = [
         [0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6],
         [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]
     ]
 
-    const game_over = () => {
-        let true_or_not = null
+    let cells = "123456789".split('')    
 
-        WINNING_COMBOS.some((combo) => {
+    const updateCells = (old_value, new_value) => {
+        let index = cells.indexOf(old_value);
+        if (index > -1) {
+            cells.splice(index, 1, new_value);
+        } 
+    }    
+
+    const game_over = () => {
+        return WINNING_COMBOS.some((combo) => {
             unique = [cells[combo[0]], cells[combo[1]], cells[combo[2]]].filter(onlyUnique)
-            if (unique.length == 1) {
-                console.log(`TRUE TRUE TRUE`)
-                true_or_not = true
-                return true_or_not === true
-            } 
-        })
-        return true_or_not    
+            return unique.length == 1 
+        })   
     }   
 
-    function onlyUnique(value, index, self) {
+    const onlyUnique = (value, index, self) => {
         return self.indexOf(value) === index;
     }
 
-    function printhello() {
-        console.log("hello")
+    return {WINNING_COMBOS, updateCells, game_over, cells}
+})();
+
+
+
+const Game = () => {
+    let cells = "123456789".split('')
+    let round = 1
+    let players = []
+    let current_player = players[0]
+
+    const game_setup = () => {
+        players.push(Player("x"))
+        players.push(Player("o"))
     }
 
-    return {cells, play}
+    const start_game = () => {
+        document.querySelectorAll(".square").forEach((square)=>{
+            square.addEventListener("click", playerInputs, { once: true })
+        })
+    }
+
+    const playerInputs = (e) => {             
+        if (round%2 != 0) {
+            e.target.querySelector(".x").style.display = "block"
+            Board.updateCells(e.target.id, players[0].move)    
+            current_player = players[0] 
+        }  
+        else {
+            e.target.querySelector(".o").style.display = "block"
+            Board.updateCells(e.target.id, players[1].move)       
+            current_player = players[1]      
+        }
+        round += 1  
+        if (Board.game_over() || round == 10) Helper.onGameOver(current_player)        
+    }    
+
+    const play = () => {
+        game_setup();
+        start_game();
+    }
+
+    return {play}
 };
 
 const Player = (move) => {
     return {move}
 };
 
-
 game = Game()
 game.play()
-
